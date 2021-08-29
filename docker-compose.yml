@@ -1,8 +1,10 @@
-version: '3'
+version: '3.7'
 services:
   galaxus-price-watcher:
     image: gpw:latest
     container_name: galaxus-price-watcher
+    environment:
+      - TZ=Europe/Zurich
     volumes:
       - ./gpw.toml:/app/gpw.toml
       - ./driver:/app/driver
