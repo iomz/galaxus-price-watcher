@@ -1,21 +1,14 @@
 package main
 
 import (
-	"bytes"
-	"database/sql"
 	"flag"
 	"fmt"
 	"log"
 	"math/rand"
-	"net/http"
-	"net/http/httputil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"runtime/debug"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gregdel/pushover"
@@ -87,7 +80,6 @@ func main() {
 		// Preflight sleep Max minutes for the preflight sleep
 		preflightSleepMaxMinutes = viper.GetInt("general.preflight-sleep-max")
 		// Path to the sqlite3 directory
-		dbDirPath         = viper.GetString("general.sqlite3dir")
 		poAPIToken        = viper.GetString("pushover.api-token")
 		poUserKey         = viper.GetString("pushover.user-key")
 		webdriverPath     = viper.GetString("webdriver.path")
@@ -196,7 +188,7 @@ func main() {
 		itemPrice, _ := itemPriceElem.Text()
 
 		// check the item availability
-		itemAvailabilityElem, err := wd.FindElements(selenium.ByCSSSelector, ".availabilityText > div > div")
+		itemAvailabilityElem, err := wd.FindElement(selenium.ByCSSSelector, ".availabilityText > div > div")
 		if err != nil {
 			panic(err)
 		}
@@ -215,7 +207,7 @@ func main() {
 			updated = true
 		}
 
-		if updated && notificationLevel > 2 {
+		if updated && notificationLevel > 1 {
 			po.Notify(
 				itemAvailability,
 				fmt.Sprintf("[dpw] %s: CHF %s", name, itemPrice),
