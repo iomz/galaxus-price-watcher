@@ -1,0 +1,9 @@
+version: '3'
+services:
+  galaxus-price-watcher:
+    image: gpw:latest
+    container_name: galaxus-price-watcher
+    volumes:
+      - ./gpw.toml:/app/gpw.toml
+      - ./driver:/app/driver
+      - ./vendor:/build/vendor
