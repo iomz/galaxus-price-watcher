@@ -151,12 +151,12 @@ func main() {
 	defer wd.Quit()
 
 	// check the items
-	items := viper.GetStringMap("items")
+	items := viper.GetStringMap("galaxus")
 	for itemid := range items {
-		url := viper.GetString(fmt.Sprintf("items.%s.url", itemid))
-		name := viper.GetString(fmt.Sprintf("items.%s.name", itemid))
-		lastPrice := viper.GetString(fmt.Sprintf("items.%s.price", itemid))
-		lastAvailability := viper.GetString(fmt.Sprintf("items.%s.availability", itemid))
+		url := viper.GetString(fmt.Sprintf("galaxus.%s.url", itemid))
+		name := viper.GetString(fmt.Sprintf("galaxus.%s.name", itemid))
+		lastPrice := viper.GetString(fmt.Sprintf("galaxus.%s.price", itemid))
+		lastAvailability := viper.GetString(fmt.Sprintf("galaxus.%s.availability", itemid))
 		log.Printf("Checking \"%s\": %s", name, url)
 
 		// get the item page
@@ -179,7 +179,7 @@ func main() {
 			if notificationLevel > 0 {
 				po.Notify(
 					"Something went wrong",
-					fmt.Sprintf("[dpw] %s", name),
+					fmt.Sprintf("[gpw] %s", name),
 					url,
 				)
 			}
@@ -198,19 +198,20 @@ func main() {
 		updated := false
 
 		if lastPrice != itemPrice {
-			viper.Set(fmt.Sprintf("items.%s.price", itemid), itemPrice)
+			viper.Set(fmt.Sprintf("galaxus.%s.price", itemid), itemPrice)
 			updated = true
 		}
 
 		if lastAvailability != itemAvailability {
-			viper.Set(fmt.Sprintf("items.%s.availability", itemid), itemAvailability)
+			viper.Set(fmt.Sprintf("galaxus.%s.availability", itemid), itemAvailability)
 			updated = true
 		}
 
 		if updated && notificationLevel > 1 {
+			log.Printf("Notify the item update for %s", name)
 			po.Notify(
 				itemAvailability,
-				fmt.Sprintf("[dpw] %s: CHF %s", name, itemPrice),
+				fmt.Sprintf("[gpw] %s: CHF %s", name, itemPrice),
 				url,
 			)
 		} // body end
