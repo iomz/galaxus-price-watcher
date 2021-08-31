@@ -70,6 +70,12 @@ func main() {
 		log.Fatalf("Fatal error config file: %s \n", err)
 	}
 
+	viper.SetDefault("general.debug", false)
+	viper.SetDefault("general.notification-level", 1)
+	viper.SetDefault("general.preflight-sleep", false)
+	viper.SetDefault("general.preflight-sleep-max", 60)
+	viper.SetDefault("general.interval", 60)
+
 	var (
 		// Debug enable
 		debugEnabled = viper.GetBool("general.debug")
@@ -79,6 +85,8 @@ func main() {
 		preflightSleep = viper.GetBool("general.preflight-sleep")
 		// Preflight sleep Max minutes for the preflight sleep
 		preflightSleepMaxMinutes = viper.GetInt("general.preflight-sleep-max")
+		// Interval (seconds) between page retrievals
+		interval = viper.GetInt("general.interval")
 		// Path to the sqlite3 directory
 		poAPIToken        = viper.GetString("pushover.api-token")
 		poUserKey         = viper.GetString("pushover.user-key")
@@ -152,7 +160,9 @@ func main() {
 
 	// check the items
 	items := viper.GetStringMap("galaxus")
+	itemCount := -1
 	for itemid := range items {
+		itemCount += 1
 		url := viper.GetString(fmt.Sprintf("galaxus.%s.url", itemid))
 		name := viper.GetString(fmt.Sprintf("galaxus.%s.name", itemid))
 		lastPrice := viper.GetString(fmt.Sprintf("galaxus.%s.price", itemid))
@@ -160,6 +170,12 @@ func main() {
 		viper.SetDefault(fmt.Sprintf("galaxus.%s.watch", itemid), "price")
 		watch := viper.GetString(fmt.Sprintf("galaxus.%s.watch", itemid))
 		log.Printf("Checking \"%s\": %s", name, url)
+
+		// sleep before checking the next item
+		if itemCount > 0 {
+			log.Printf("Sleeping for %d seconds", interval)
+			time.Sleep(time.Second * time.Duration(interval))
+		}
 
 		// get the item page
 		if err = wd.Get(url); err != nil {
@@ -170,8 +186,6 @@ func main() {
 					url,
 				)
 			}
-			// sleep before checking the next item
-			time.Sleep(time.Minute * time.Duration(30))
 			continue
 		}
 
@@ -190,8 +204,6 @@ func main() {
 				html, _ := wd.PageSource()
 				fmt.Println(html)
 			}
-			// sleep before checking the next item
-			time.Sleep(time.Minute * time.Duration(30))
 			continue
 		}
 		itemPrice, _ := itemPriceElem.Text()
@@ -207,8 +219,6 @@ func main() {
 					url,
 				)
 			}
-			// sleep before checking the next item
-			time.Sleep(time.Minute * time.Duration(30))
 			continue
 		}
 		itemAvailability, _ := itemAvailabilityElem.Text()
@@ -236,9 +246,6 @@ func main() {
 		} else {
 			log.Printf("No update for %s", name)
 		}
-
-		// sleep before checking the next item
-		time.Sleep(time.Minute * time.Duration(30))
 	} // items end
 
 	// Wrap-up
