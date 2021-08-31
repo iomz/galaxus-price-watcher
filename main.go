@@ -157,64 +157,88 @@ func main() {
 		name := viper.GetString(fmt.Sprintf("galaxus.%s.name", itemid))
 		lastPrice := viper.GetString(fmt.Sprintf("galaxus.%s.price", itemid))
 		lastAvailability := viper.GetString(fmt.Sprintf("galaxus.%s.availability", itemid))
+		viper.SetDefault(fmt.Sprintf("galaxus.%s.watch", itemid), "price")
+		watch := viper.GetString(fmt.Sprintf("galaxus.%s.watch", itemid))
 		log.Printf("Checking \"%s\": %s", name, url)
 
 		// get the item page
 		if err = wd.Get(url); err != nil {
 			if notificationLevel > 0 {
 				po.Notify(
-					"Something went wrong",
+					"Page doesn't exist",
 					fmt.Sprintf("[gpw] %s", name),
 					url,
 				)
 			}
-			panic(err)
+			// sleep before checking the next item
+			time.Sleep(time.Minute * time.Duration(30))
+			continue
 		}
 
 		// check the item price
 		itemPriceElem, err := wd.FindElement(selenium.ByCSSSelector, "#pageContent > div > div > div > div > div > div > span > strong")
-		//angelNameElem, err := wd.FindElement(selenium.ByCSSSelector, "#girlprofile > h4 > span > table > tbody > tr > td:nth-child(1)")
 		if err != nil {
-			// process the main body of the diary
+			log.Printf("Unable to get the price for \"%s\": %s", name, url)
 			if notificationLevel > 0 {
 				po.Notify(
-					"Something went wrong",
+					"Unable to get the price",
 					fmt.Sprintf("[gpw] %s", name),
 					url,
 				)
 			}
-			panic(err)
+			if notificationLevel > 2 {
+				html, _ := wd.PageSource()
+				fmt.Println(html)
+			}
+			// sleep before checking the next item
+			time.Sleep(time.Minute * time.Duration(30))
+			continue
 		}
 		itemPrice, _ := itemPriceElem.Text()
 
 		// check the item availability
 		itemAvailabilityElem, err := wd.FindElement(selenium.ByCSSSelector, ".availabilityText > div > div")
 		if err != nil {
-			panic(err)
+			log.Printf("Unable to get the availability for \"%s\": %s", name, url)
+			if notificationLevel > 0 {
+				po.Notify(
+					"Unable to get the availability",
+					fmt.Sprintf("[gpw] %s", name),
+					url,
+				)
+			}
+			// sleep before checking the next item
+			time.Sleep(time.Minute * time.Duration(30))
+			continue
 		}
 		itemAvailability, _ := itemAvailabilityElem.Text()
 
 		// check notification condition
 		updated := false
 
-		if lastPrice != itemPrice {
+		if lastPrice != itemPrice && watch != "stock" {
 			viper.Set(fmt.Sprintf("galaxus.%s.price", itemid), itemPrice)
 			updated = true
 		}
 
-		if lastAvailability != itemAvailability {
+		if lastAvailability != itemAvailability && watch != "price" {
 			viper.Set(fmt.Sprintf("galaxus.%s.availability", itemid), itemAvailability)
 			updated = true
 		}
 
-		if updated && notificationLevel > 1 {
+		if updated {
 			log.Printf("Notify the item update for %s", name)
 			po.Notify(
 				itemAvailability,
 				fmt.Sprintf("[gpw] %s: CHF %s", name, itemPrice),
 				url,
 			)
-		} // body end
+		} else {
+			log.Printf("No update for %s", name)
+		}
+
+		// sleep before checking the next item
+		time.Sleep(time.Minute * time.Duration(30))
 	} // items end
 
 	// Wrap-up

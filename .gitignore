@@ -1,6 +1,6 @@
 gpw
 gpw.log
-gpw.toml
+*.toml
 
 db/*
 driver/*
